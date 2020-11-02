@@ -1,0 +1,62 @@
+<html>
+  <body>
+
+    <div id="game">
+      <div id="board">
+        <div class="square" data-index="0"></div>
+        <div class="square" data-index="1"></div>
+        <div class="square" data-index="2"></div>
+        <div class="square" data-index="3"></div>
+        <div class="square" data-index="4"></div>
+        <div class="square" data-index="5"></div>
+        <div class="square" data-index="6"></div>
+        <div class="square" data-index="7"></div>
+        <div class="square" data-index="8"></div>
+      </div>
+      <div id="buttons">
+        <button data-side="X">X</button>
+        <button data-side="O">O</button>
+      </div>
+    </div>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      #game {
+        height: 100%;
+        width: 100%;
+        padding: 20px;
+      }
+
+      #board {
+        height: 600px;
+        width: 600px;
+        /* Flex */
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .square {
+        height: 33%;
+        width: 33%;
+        background: cornflowerblue;
+      }
+
+      #buttons {
+        width: 200px;
+      }
+
+      #buttons button {
+        display: block;
+        width: 50%;
+      }
+    </style>
+    <script src="./main.js"></script>
+  </body>
+</html>
