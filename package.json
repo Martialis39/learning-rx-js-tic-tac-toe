@@ -10,6 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "rxjs": "^6.6.3"
+    "express": "^4.15.2",
+    "rxjs": "^6.6.3",
+    "socket.io": "^2.3.0"
   }
 }
