@@ -1,6 +1,10 @@
 import io from 'socket.io-client';
 
-import { gameStream, buildReceiveBoardObservable, inputStream } from './observables';
+import {merge} from 'rxjs';
+
+import {filter, map, distinctUntilChanged} from 'rxjs/operators';
+
+import {buildReceiveBoardObservable, localInputStream} from './observables';
 import {emitBoardTo} from './helpers';
 // import {} from './helpers'
 //
@@ -12,10 +16,26 @@ const socket = io("ws://localhost:3000");
 
 const emitBoardToSocket = emitBoardTo(socket);
 
-// Add a function to Window to send a message
-window.testSocket = (b = [1,2,3]) => emitBoardToSocket(b)
+let dummyBoard = Array(9).fill("")
 
-// inputStream.subscribe((value) => {
+const fillDummyBoard = () => {
+  // Get the last free index on board
+  const { index } = dummyBoard
+    .map((e, index) => ({e, index}))
+    .filter(({e, _}) => !Boolean(e))
+    .pop()
+  console.log(index)
+  // Modify global variable
+  dummyBoard[index] = "O";
+  const copy = dummyBoard.slice();
+  // Return copy of global variable
+  return copy;
+};
+
+// Add a function to Window to send a message
+window.testSocket = (b = dummyBoard) => emitBoardToSocket(fillDummyBoard(b))
+
+// localInputStream.subscribe((value) => {
 //   console.log(value)
 // })
 // 
@@ -23,13 +43,12 @@ window.testSocket = (b = [1,2,3]) => emitBoardToSocket(b)
 //   console.log(value)
 // })
 
-const boardFromServerObservable = buildReceiveBoardObservable(socket)
+const opponentInputStream = buildReceiveBoardObservable(socket).pipe(
+  map(board => ({board, source: "remote"}))
+)
+const combinedStreams = merge(localInputStream, opponentInputStream)
 
-inputStream.subscribe(console.log.bind(null, "Game stream"))
-
-boardFromServerObservable.subscribe(console.log.bind(null, 'Got it::: '))
-
-// Whenever a message of type "response" is emitted from the server,
-// log that message
-
-// Our app
+combinedStreams.pipe(
+  distinctUntilChanged((p, q) => p.source === q.source)
+)
+  .subscribe(console.log.bind(null, 'Combined streams ::: '))

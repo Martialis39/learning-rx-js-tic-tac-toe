@@ -24,21 +24,17 @@ export const buildReceiveBoardObservable = socket => {
   });
 };
 
-export const buttonsStream = fromEvent(buttonsElement, 'click'). pipe(
+export const buttonsStream = fromEvent(buttonsElement, 'click').pipe(
   map(getTarget),
   map(getSide),
   take(1)
 );
 
-export const inputStream = fromEvent(boardElement, 'click').
+export const localInputStream = fromEvent(boardElement, 'click').
   pipe(
     map(getTarget),
     map(getIndex),
     withLatestFrom(boardStream, buttonsStream),
-    scan(markMoveOnBoard, [])
-  )
-
-export const gameStream = buttonsStream.pipe(
-  withLatestFrom(inputStream)
-)
-
+    scan(markMoveOnBoard, []),
+    map(board => ({board, source: "local"}))
+  );
