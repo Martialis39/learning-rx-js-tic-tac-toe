@@ -1,47 +1,44 @@
-import {fromEvent, of, combineLatest} from 'rxjs'
+import {fromEvent, of, Observable } from 'rxjs';
 
-import { flatMap, map, tap, withLatestFrom, scan, take } from 'rxjs/operators'
+import {map, flatMap, withLatestFrom, scan, take } from 'rxjs/operators';
 
-import { getTarget, getIndex, drawSymbol, getSide } from './helpers'
+import { getTarget, getIndex, getSide, markMoveOnBoard } from './helpers';
 
 const boardElement = document.querySelector('#board');
 
-const buttonsElement = document.querySelector('#buttons')
+const squareElements = document.querySelectorAll('.square');
 
-const board = Array(9).fill('')
+const buttonsElement = document.querySelector('#buttons');
 
-export const boardStream = of(board)
+const board = Array(9).fill('');
+
+export const squareElementsStream = of(squareElements);
+
+export const boardStream = of(board);
+
+export const buildReceiveBoardObservable = socket => {
+  return new Observable(observer => {
+    socket.on('move_from_server', board => {
+      observer.next(board);
+    });
+  });
+};
 
 export const buttonsStream = fromEvent(buttonsElement, 'click'). pipe(
   map(getTarget),
   map(getSide),
-  take(2)
-)
+  take(1)
+);
 
 export const inputStream = fromEvent(boardElement, 'click').
   pipe(
     map(getTarget),
-    // tap(drawSymbol),
     map(getIndex),
     withLatestFrom(boardStream, buttonsStream),
-    scan((acc, curr, i) => {
-      console.log('acc is ', acc)
-      console.log('curr is ', curr)
-      const side = curr[2];
-      const board = i === 0 ? curr[1] : acc
-      const [index] = curr
-      console.log('index is ', index)
-      console.log('board is ', board)
-      let newBoard = board
-      newBoard[index] = side;
-      return newBoard
-    }, [])
+    scan(markMoveOnBoard, [])
   )
-
-// export const gameStream = combineLatest(inputStream, buttonsStream)
 
 export const gameStream = buttonsStream.pipe(
   withLatestFrom(inputStream)
 )
-inputStream.subscribe(valu => console.log(valu))
 

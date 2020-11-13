@@ -1,11 +1,19 @@
-import { map } from 'rxjs/operators'
-// import {} from './observables'
+import io from 'socket.io-client';
+
+import { gameStream, buildReceiveBoardObservable, inputStream } from './observables';
+import {emitBoardTo} from './helpers';
 // import {} from './helpers'
 //
 // Socks!
 //
 
-import { inputStream, buttonsStream } from './observables'
+// Connect to the Express server
+const socket = io("ws://localhost:3000");
+
+const emitBoardToSocket = emitBoardTo(socket);
+
+// Add a function to Window to send a message
+window.testSocket = (b = [1,2,3]) => emitBoardToSocket(b)
 
 // inputStream.subscribe((value) => {
 //   console.log(value)
@@ -15,24 +23,13 @@ import { inputStream, buttonsStream } from './observables'
 //   console.log(value)
 // })
 
+const boardFromServerObservable = buildReceiveBoardObservable(socket)
 
+inputStream.subscribe(console.log.bind(null, "Game stream"))
 
-import io from 'socket.io-client';
-
-// Connect to the Express server
-const socket = io("ws://localhost:3000")
-
-// Add a function to Window to send a message
-window.testSocket = () => {
-  socket.emit('greeting', 'Hi!')
-}
+boardFromServerObservable.subscribe(console.log.bind(null, 'Got it::: '))
 
 // Whenever a message of type "response" is emitted from the server,
 // log that message
-
-socket.on('response', msg => {
-  console.log("Got a message back: ", msg);
-})
-
 
 // Our app
