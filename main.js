@@ -2,9 +2,9 @@ import io from 'socket.io-client';
 
 import {merge} from 'rxjs';
 
-import {filter, map, distinctUntilChanged} from 'rxjs/operators';
+import {map, distinctUntilChanged, tap} from 'rxjs/operators';
 
-import {buildReceiveBoardObservable, localInputStream} from './observables';
+import {createUpdateBoardStream, buildReceiveMoveObsersable, localInputStream} from './observables';
 import {emitBoardTo} from './helpers';
 // import {} from './helpers'
 //
@@ -16,24 +16,26 @@ const socket = io("ws://localhost:3000");
 
 const emitBoardToSocket = emitBoardTo(socket);
 
-let dummyBoard = Array(9).fill("")
-
-const fillDummyBoard = () => {
-  // Get the last free index on board
-  const { index } = dummyBoard
-    .map((e, index) => ({e, index}))
-    .filter(({e, _}) => !Boolean(e))
-    .pop()
-  console.log(index)
-  // Modify global variable
-  dummyBoard[index] = "O";
-  const copy = dummyBoard.slice();
-  // Return copy of global variable
-  return copy;
+const setupDummyBoard = board => {
+  const dummyBoard = board;
+  return () => {
+    const { index } = dummyBoard
+      .map((e, index) => ({e, index}))
+      .filter(({e, _}) => !Boolean(e))
+      .pop();
+    //
+    // Modify closure variable
+    //
+    dummyBoard[index] = "O";
+    return index;
+  };
 };
 
+
+const makeDummyMove = setupDummyBoard(Array(9).fill(""));
+
 // Add a function to Window to send a message
-window.testSocket = (b = dummyBoard) => emitBoardToSocket(fillDummyBoard(b))
+window.makeTestMove = () => emitBoardToSocket(makeDummyMove())
 
 // localInputStream.subscribe((value) => {
 //   console.log(value)
@@ -43,12 +45,13 @@ window.testSocket = (b = dummyBoard) => emitBoardToSocket(fillDummyBoard(b))
 //   console.log(value)
 // })
 
-const opponentInputStream = buildReceiveBoardObservable(socket).pipe(
-  map(board => ({board, source: "remote"}))
+const opponentInputStream = buildReceiveMoveObsersable(socket).pipe(
+  map(move => ({move, source: "remote"}))
 )
-const combinedStreams = merge(localInputStream, opponentInputStream)
-
-combinedStreams.pipe(
+const combinedInputStreams = merge(localInputStream, opponentInputStream).pipe(
   distinctUntilChanged((p, q) => p.source === q.source)
 )
-  .subscribe(console.log.bind(null, 'Combined streams ::: '))
+
+const gameStream = createUpdateBoardStream(combinedInputStreams);
+
+gameStream.subscribe(console.log.bind(null, 'Game stream: '))

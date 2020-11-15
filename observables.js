@@ -1,12 +1,12 @@
-import {fromEvent, of, Observable } from 'rxjs';
+import {fromEvent, of, Observable} from 'rxjs';
 
-import {map, flatMap, withLatestFrom, scan, take } from 'rxjs/operators';
+import {map, tap, withLatestFrom, scan, take, filter } from 'rxjs/operators';
 
-import { getTarget, getIndex, getSide, markMoveOnBoard } from './helpers';
+import { getTarget, getIndex, getSide, markMoveOnBoard, drawSymbolsOnBoard } from './helpers';
 
 const boardElement = document.querySelector('#board');
 
-const squareElements = document.querySelectorAll('.square');
+const squareElements = [...document.querySelectorAll('.square')];
 
 const buttonsElement = document.querySelector('#buttons');
 
@@ -16,7 +16,7 @@ export const squareElementsStream = of(squareElements);
 
 export const boardStream = of(board);
 
-export const buildReceiveBoardObservable = socket => {
+export const buildReceiveMoveObsersable = socket => {
   return new Observable(observer => {
     socket.on('move_from_server', board => {
       observer.next(board);
@@ -30,11 +30,30 @@ export const buttonsStream = fromEvent(buttonsElement, 'click').pipe(
   take(1)
 );
 
-export const localInputStream = fromEvent(boardElement, 'click').
-  pipe(
+export const createUpdateBoardStream = inputObservable => {
+  return inputObservable
+    .pipe(
+      withLatestFrom(boardStream, (input, board) => {
+        const {move, source} = input;
+        const side = source === 'remote' ? 'O' : 'X';
+        return {move, board, side}
+      }),
+      scan(markMoveOnBoard, []),
+      withLatestFrom(squareElementsStream, ({board}, squares) => {
+        return {board, squares}
+      }),
+      tap(drawSymbolsOnBoard)
+    )
+}
+
+// localInputStream
+//
+// Gets input from the local player
+//
+export const localInputStream = fromEvent(boardElement, 'click')
+  .pipe(
     map(getTarget),
+    filter(element => element.textContent === ''),
     map(getIndex),
-    withLatestFrom(boardStream, buttonsStream),
-    scan(markMoveOnBoard, []),
-    map(board => ({board, source: "local"}))
+    map(move => ({move, source: "local"}))
   );

@@ -42,4 +42,17 @@ the observables, helper functions, and the main game loop all in
 separate files but at some point, the focus just shifted to
 `observables.js`. Sorry.
 
+### "Architecture" notes
+
+What do I want to do? I want to send the board each time. I am fixated
+on this. If I would do this, I would have:
+
+1) A stream from the server (Server Stream), which gives me the newest board.
+Whenever this emits, I want to draw the board.
+
+2) A stream for local input (Local stream), which also has the latest board.
+When this stream emits, I want to trigger an emission to Server Stream.
+
+To do this, I need a subject (need to control when sth emits).
+
 

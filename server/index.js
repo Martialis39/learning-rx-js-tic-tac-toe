@@ -18,9 +18,9 @@ io.on('connection', socket => {
   // Log when someone connects!
   console.log("Someone connected!")
   // Receive moves
-  socket.on('move', board => {
-    logMoveFromServer('move_from_server', board);
-    io.emit('move_from_server', board);
+  socket.on('move', move => {
+    logMoveFromServer('move_from_server', move);
+    io.emit('move_from_server', move);
     // broadcast sends to all but the sender
     // socket.broadcast.emit('move_from_server', board);
   })
